@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Ast\"/>
+    <Folder Include="Grammar\"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Antlr4 Include="Grammar/*.g4"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Antlr4" Version="4.6.6">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Antlr4.Runtime" Version="4.6.6"/>
+    <PackageReference Include="Dawn.Guard" Version="1.12.0"/>
+    <PackageReference Include="Serilog" Version="4.3.1-dev-02373" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Reactive.Ext\Reactive.Ext.csproj"/>
+  </ItemGroup>
+
+</Project>
