@@ -236,7 +236,7 @@ public class WindowedAverageConditionTests
         .Select(data => data.Value)
         .DefaultIfEmpty(0.0)
         .Average()
-        .Select(avg => new { Type = "x", Average = avg })); // Add type information
+        .Select(avg => new { Type = "x", Average = avg, Value = avg > 0.5 })); // Add type information
 
     var yAverageObservable = source
       .Where(data => data.Name == "y")
@@ -245,16 +245,29 @@ public class WindowedAverageConditionTests
         .Select(data => data.Value)
         .DefaultIfEmpty(0.0)
         .Average()
-        .Select(avg => new { Type = "y", Average = avg })); // Add type information
+        .Select(avg => new { Type = "y", Average = avg, Value = avg > 0.7 })) ; // Add type information
 
     // Merge both streams and maintain state
+    // return xAverageObservable
+    //   .Merge(yAverageObservable)
+    //   .Scan(new { XAvg = 0.0, YAvg = 0.0 }, (state, update) =>
+    //     update.Type == "x"
+    //       ? new { XAvg = update.Average, YAvg = state.YAvg }
+    //       : new { XAvg = state.XAvg, YAvg = update.Average })
+    //   .Select(state => state.XAvg > 0.5 && state.YAvg >= 0.7)
+    //   .DistinctUntilChanged(); // Only emit when the boolean result changes
+
     return xAverageObservable
-      .Merge(yAverageObservable)
-      .Scan(new { XAvg = 0.0, YAvg = 0.0 }, (state, update) =>
-        update.Type == "x"
-          ? new { XAvg = update.Average, YAvg = state.YAvg }
-          : new { XAvg = state.XAvg, YAvg = update.Average })
-      .Select(state => state.XAvg > 0.5 && state.YAvg >= 0.7)
+      .CombineLatest(yAverageObservable, (a,b) =>
+      {
+        return new { Value = a.Value & b.Value };
+      })
+      // .Scan(new { Value = true }, (state, update) =>
+      // {
+      //   return new { Value = state.Value && update.Value };
+      // })
+      // .Select(state => state.XAvg > 0.5 && state.YAvg >= 0.7)
+      .Select(state => state.Value)
       .DistinctUntilChanged(); // Only emit when the boolean result changes
   }
 }

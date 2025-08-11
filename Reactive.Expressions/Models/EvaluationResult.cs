@@ -31,7 +31,7 @@ public record EvaluationResult(string NodeName, bool Value, Period Period)
         Guard.Argument(other, nameof(other)).NotNull();
 
         bool value = Value && other.Value;
-        string name = $"and_{NodeName}_{other.NodeName}";
+        string name = $"{NodeName}_and_{other.NodeName}";
         return CombineWith(other, name, value);
     }
 
@@ -46,7 +46,7 @@ public record EvaluationResult(string NodeName, bool Value, Period Period)
         Guard.Argument(other, nameof(other)).NotNull();
 
         bool value = Value || other.Value;
-        string name = $"or_{NodeName}_{other.NodeName}";
+        string name = $"{NodeName}_or_{other.NodeName}";
         return CombineWith(other, name, value);
     }
 

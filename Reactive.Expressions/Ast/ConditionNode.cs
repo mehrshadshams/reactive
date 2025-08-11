@@ -19,7 +19,7 @@ public class ConditionNode : ExpressionNode
   public ConditionNode(ConditionInfo condition)
   {
     Condition = Guard.Argument(condition, nameof(condition)).NotNull();
-    Name = $"{Guid.NewGuid():N}";
+    Name = $"{condition.RawExpression}";
   }
 
   /// <summary>

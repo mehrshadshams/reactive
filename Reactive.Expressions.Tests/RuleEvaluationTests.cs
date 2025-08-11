@@ -526,13 +526,13 @@ public class RuleEvaluationTests
     var tcs = new TaskCompletionSource<bool>();
 
     var subscription = expression.Subscribe(
-      result => 
+      result =>
       {
         results.Add(result);
         Console.WriteLine($"📊 Simple Rule result: {result.NodeName} = {result.Value} at {result.Period.End} (Period: {result.Period.Start} to {result.Period.End})");
         tcs.TrySetResult(true);
       },
-      error => 
+      error =>
       {
         Console.WriteLine($"❌ Error in subscription: {error}");
         tcs.TrySetException(error);
@@ -567,14 +567,14 @@ public class RuleEvaluationTests
 
       // Assert
       Console.WriteLine($"✅ Total results: {results.Count}");
-      
+
       if (completedTask == timeoutTask)
       {
         Assert.Fail($"Test timed out waiting for evaluation result. Received {results.Count} results.");
       }
 
       Assert.That(results.Count, Is.GreaterThan(0), "Should have received at least one evaluation result");
-      
+
       // Should have at least one true result since avg(80) > 75
       var trueResults = results.Where(r => r.Value == true).ToList();
       Assert.That(trueResults.Count, Is.GreaterThan(0), "Should have triggered with CPU values > 75");
@@ -596,7 +596,7 @@ public class RuleEvaluationTests
 
     // Subscribe to results
     var subscription = expression.Subscribe(
-      result => 
+      result =>
       {
         results.Add(result);
         Console.WriteLine($"📊 Rule result: {result.NodeName} = {result.Value} at {result.Period.End}");
@@ -613,11 +613,11 @@ public class RuleEvaluationTests
       // Send all high CPU values (85) over the 3-second window
       for (int i = 0; i < 8; i++)
       {
-        _metricSource.OnNext(new MetricData 
-        { 
-          Name = "cpu", 
+        _metricSource.OnNext(new MetricData
+        {
+          Name = "cpu",
           Value = 85, // All values > 80, so avg will be 85 > 80
-          Timestamp = now.AddSeconds(i * 0.3) 
+          Timestamp = now.AddSeconds(i * 0.3)
         });
       }
 
@@ -633,7 +633,7 @@ public class RuleEvaluationTests
 
       // Assert - Should have evaluation results
       Assert.That(results.Count, Is.GreaterThan(0), "Should produce evaluation results");
-      
+
       // Should have some true results when CPU > 80
       var trueResults = results.Where(r => r.Value == true).ToList();
       Assert.That(trueResults.Count, Is.GreaterThan(0), "Rule should have triggered with high CPU values");
@@ -654,7 +654,7 @@ public class RuleEvaluationTests
     var expression = _expressionBuilder.BuildExpression(rule);
     var results = new List<EvaluationResult>();
 
-    var subscription = expression.Subscribe(result => 
+    var subscription = expression.Subscribe(result =>
     {
       results.Add(result);
       Console.WriteLine($"📊 AND Rule result: {result.NodeName} = {result.Value} at {result.Period.End}");
@@ -684,11 +684,11 @@ public class RuleEvaluationTests
 
       // Assert
       Assert.That(results.Count, Is.GreaterThan(0), "Should produce evaluation results for AND condition");
-      
+
       // Should have both true and false results
       var trueResults = results.Where(r => r.Value == true).ToList();
       var falseResults = results.Where(r => r.Value == false).ToList();
-      
+
       Console.WriteLine($"✅ AND condition rule: {trueResults.Count} true results, {falseResults.Count} false results");
     }
     finally
@@ -705,7 +705,7 @@ public class RuleEvaluationTests
     var expression = _expressionBuilder.BuildExpression(rule);
     var results = new List<EvaluationResult>();
 
-    var subscription = expression.Subscribe(result => 
+    var subscription = expression.Subscribe(result =>
     {
       results.Add(result);
       Console.WriteLine($"📊 OR Rule result: {result.NodeName} = {result.Value} at {result.Period.End}");
@@ -744,10 +744,10 @@ public class RuleEvaluationTests
 
       // Assert
       Assert.That(results.Count, Is.GreaterThan(0), "Should produce evaluation results for OR condition");
-      
+
       var trueResults = results.Where(r => r.Value == true).ToList();
       Assert.That(trueResults.Count, Is.GreaterThan(0), "OR condition should trigger when either condition is met");
-      
+
       Console.WriteLine($"✅ OR condition rule: {trueResults.Count} triggered results out of {results.Count} total");
     }
     finally
@@ -760,11 +760,11 @@ public class RuleEvaluationTests
   public async Task RuleEvaluation_WithActualData_ComplexExpression_ShouldProduceCorrectResult()
   {
     // Arrange - Complex rule: (CPU > 70 && memory > 80) || disk > 95
-    var rule = "(avg(cpu, 2s) > 70 && avg(memory, 2s) > 80) || avg(disk, 2s) > 95";
+    var rule = "(avg(cpu, 2m) > 70 && avg(memory, 2m) > 80) || avg(disk, 2m) > 95";
     var expression = _expressionBuilder.BuildExpression(rule);
     var results = new List<EvaluationResult>();
 
-    var subscription = expression.Subscribe(result => 
+    var subscription = expression.Subscribe(result =>
     {
       results.Add(result);
       Console.WriteLine($"📊 Complex Rule result: {result.NodeName} = {result.Value} at {result.Period.End}");
@@ -777,9 +777,9 @@ public class RuleEvaluationTests
       // Act - Test scenario 1: All low values (should NOT trigger)
       for (int i = 0; i < 3; i++)
       {
-        _metricSource.OnNext(new MetricData { Name = "cpu", Value = 50, Timestamp = now.AddSeconds(i) });
-        _metricSource.OnNext(new MetricData { Name = "memory", Value = 60, Timestamp = now.AddSeconds(i) });
-        _metricSource.OnNext(new MetricData { Name = "disk", Value = 70, Timestamp = now.AddSeconds(i) });
+        _metricSource.OnNext(new MetricData { Name = "cpu", Value = 50, Timestamp = now.AddMinutes(i) });
+        _metricSource.OnNext(new MetricData { Name = "memory", Value = 60, Timestamp = now.AddMinutes(i) });
+        _metricSource.OnNext(new MetricData { Name = "disk", Value = 70, Timestamp = now.AddMinutes(i) });
       }
 
       await Task.Delay(3000);
@@ -787,9 +787,9 @@ public class RuleEvaluationTests
       // Test scenario 2: High disk only (should trigger via disk condition)
       for (int i = 0; i < 3; i++)
       {
-        _metricSource.OnNext(new MetricData { Name = "cpu", Value = 50, Timestamp = now.AddSeconds(5 + i) });
-        _metricSource.OnNext(new MetricData { Name = "memory", Value = 60, Timestamp = now.AddSeconds(5 + i) });
-        _metricSource.OnNext(new MetricData { Name = "disk", Value = 98, Timestamp = now.AddSeconds(5 + i) });
+        _metricSource.OnNext(new MetricData { Name = "cpu", Value = 50, Timestamp = now.AddMinutes(5 + i) });
+        _metricSource.OnNext(new MetricData { Name = "memory", Value = 60, Timestamp = now.AddMinutes(5 + i) });
+        _metricSource.OnNext(new MetricData { Name = "disk", Value = 98, Timestamp = now.AddMinutes(5 + i) });
       }
 
       await Task.Delay(3000);
@@ -797,19 +797,19 @@ public class RuleEvaluationTests
       // Test scenario 3: High CPU and memory (should trigger via CPU && memory condition)
       for (int i = 0; i < 3; i++)
       {
-        _metricSource.OnNext(new MetricData { Name = "cpu", Value = 75, Timestamp = now.AddSeconds(10 + i) });
-        _metricSource.OnNext(new MetricData { Name = "memory", Value = 85, Timestamp = now.AddSeconds(10 + i) });
-        _metricSource.OnNext(new MetricData { Name = "disk", Value = 60, Timestamp = now.AddSeconds(10 + i) });
+        _metricSource.OnNext(new MetricData { Name = "cpu", Value = 75, Timestamp = now.AddMinutes(10 + i) });
+        _metricSource.OnNext(new MetricData { Name = "memory", Value = 85, Timestamp = now.AddMinutes(10 + i) });
+        _metricSource.OnNext(new MetricData { Name = "disk", Value = 60, Timestamp = now.AddMinutes(10 + i) });
       }
 
       await Task.Delay(3000);
 
       // Assert
       Assert.That(results.Count, Is.GreaterThan(0), "Should produce evaluation results for complex expression");
-      
+
       var trueResults = results.Where(r => r.Value == true).ToList();
       Assert.That(trueResults.Count, Is.GreaterThan(0), "Complex expression should trigger in multiple scenarios");
-      
+
       Console.WriteLine($"✅ Complex expression rule: {trueResults.Count} triggered results out of {results.Count} total");
     }
     finally
@@ -826,7 +826,7 @@ public class RuleEvaluationTests
     var expression = _expressionBuilder.BuildExpression(rule);
     var results = new List<EvaluationResult>();
 
-    var subscription = expression.Subscribe(result => 
+    var subscription = expression.Subscribe(result =>
     {
       results.Add(result);
       Console.WriteLine($"📊 Mixed Aggregation Rule result: {result.NodeName} = {result.Value} at {result.Period.End}");
@@ -862,12 +862,12 @@ public class RuleEvaluationTests
 
       // Assert
       Assert.That(results.Count, Is.GreaterThan(0), "Should produce evaluation results for mixed aggregation types");
-      
+
       var trueResults = results.Where(r => r.Value == true).ToList();
       var falseResults = results.Where(r => r.Value == false).ToList();
-      
+
       Console.WriteLine($"✅ Mixed aggregation rule: {trueResults.Count} true results, {falseResults.Count} false results");
-      
+
       // Should have some true results when both max(cpu) > 90 AND min(memory) < 20
       Assert.That(trueResults.Count, Is.GreaterThan(0), "Should trigger when max CPU > 90 AND min memory < 20");
     }
@@ -883,9 +883,10 @@ public class RuleEvaluationTests
     // Arrange - Test multiple rules to show the reactive system works
     Console.WriteLine("🎯 Testing Reactive Rule Evaluation System");
     Console.WriteLine("==========================================");
-    
+
     var testResults = new List<(string Rule, bool Success, string Message)>();
-    
+    var r = new Random((int) DateTime.Now.Ticks);
+
     // Test 1: Simple single condition (this we know works)
     try
     {
@@ -895,7 +896,7 @@ public class RuleEvaluationTests
       var tcs1 = new TaskCompletionSource<bool>();
 
       var subscription1 = expression1.Subscribe(
-        result => 
+        result =>
         {
           results1.Add(result);
           Console.WriteLine($"📊 Rule1 result: {result.Value} at {result.Period.End}");
@@ -951,7 +952,7 @@ public class RuleEvaluationTests
       var tcs2 = new TaskCompletionSource<bool>();
 
       var subscription2 = expression2.Subscribe(
-        result => 
+        result =>
         {
           results2.Add(result);
           Console.WriteLine($"📊 Rule2 result: {result.Value} at {result.Period.End}");
@@ -963,8 +964,8 @@ public class RuleEvaluationTests
       var now2 = DateTimeOffset.Now;
       for (int i = 0; i < 10; i++)
       {
-        _metricSource.OnNext(new MetricData { Name = "cpu", Value = 85, Timestamp = now2.AddSeconds(i * 0.5) });
-        _metricSource.OnNext(new MetricData { Name = "mem", Value = 60, Timestamp = now2.AddSeconds(i * 0.5) });
+        _metricSource.OnNext(new MetricData { Name = "cpu", Value = 85 + (r.NextDouble() - 0.5) * 10, Timestamp = now2.AddSeconds(i) });
+        _metricSource.OnNext(new MetricData { Name = "mem", Value = 60 + (r.NextDouble() - 0.5) * 10 , Timestamp = now2.AddSeconds(i) });
       }
 
       await Task.Delay(1500);
@@ -1003,9 +1004,9 @@ public class RuleEvaluationTests
 
     // Assert - At least one test should succeed
     var successCount = testResults.Count(r => r.Success);
-    Assert.That(successCount, Is.GreaterThan(0), 
+    Assert.That(successCount, Is.GreaterThan(0),
       $"At least one reactive rule evaluation should succeed. Results: {string.Join("; ", testResults.Select(r => r.Message))}");
-    
+
     Console.WriteLine($"🎉 Reactive Rule Evaluation System: {successCount}/{testResults.Count} tests passed!");
   }
 

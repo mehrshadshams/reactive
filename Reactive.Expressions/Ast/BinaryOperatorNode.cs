@@ -52,13 +52,20 @@ public class BinaryOperatorNode : ExpressionNode
     var leftObs = Left.Evaluate(builder);
     var rightObs = Right.Evaluate(builder);
 
-    /*var result = Operator switch
+    var result = Operator switch
     {
-      BinaryOperator.And => leftObs.CombineLatest(rightObs, (a, b) => a.And(b)),
-      BinaryOperator.Or => leftObs.CombineLatest(rightObs, (a, b) => a.Or(b)),
+      BinaryOperator.And => leftObs.CombineLatest(rightObs, (a, b) =>
+      {
+        return a.And(b);
+      }),
+      BinaryOperator.Or => leftObs.CombineLatest(rightObs, (a, b) =>
+      {
+        return a.Or(b);
+      }),
       _ => throw new NotSupportedException($"Operator {Operator} not supported"),
-    };*/
+    };
 
+    /* TODO: Check if Merge would work?
     var merge = leftObs.Merge(rightObs);
 
     var result = Operator switch
@@ -76,11 +83,12 @@ public class BinaryOperatorNode : ExpressionNode
         {
           return acc with
           {
-            Value = acc.Value & state.Value,
+            Value = acc.Value || state.Value,
           };
         }),
       _ => throw new ArgumentOutOfRangeException()
     };
+    */
 
     return result
         .Select(x =>

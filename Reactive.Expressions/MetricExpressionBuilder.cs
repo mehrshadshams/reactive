@@ -118,7 +118,7 @@ public class MetricExpressionBuilder
         var metricStream = GetMetricStream(condition.MetricName);
 
         return metricStream
-            .Buffer(condition.TimeWindow, _metricOptions.TimeWindow) // Sliding window every second
+            .Buffer(TimeSpan.FromSeconds(1)) // Sliding window every second
             .Where(buffer => buffer.Any())
             .SelectMany(buffer => buffer.OrderBy(m => m.Timestamp).ToList())
             .WindowByTimestamp(metric => metric.Timestamp.Truncate(condition.TimeWindow).Ticks, condition.TimeWindow)
@@ -130,8 +130,8 @@ public class MetricExpressionBuilder
             .Select(buffer => buffer.OrderBy(m => m.Timestamp).ToList())
             .Select(buffer =>
             {
-                var windowStart = buffer.First().Timestamp;
-                var windowEnd = buffer.Last().Timestamp;
+                var windowStart = buffer.First().Timestamp.Truncate(condition.TimeWindow);
+                var windowEnd = windowStart + condition.TimeWindow;
 
                 // Calculate the aggregated value based on the specified aggregation type
                 (double aggregatedValue, AggregationType aggregationType) = condition.AggregationType?.ToLower(CultureInfo.InvariantCulture) switch
